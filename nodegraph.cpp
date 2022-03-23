@@ -4,9 +4,10 @@
 #include <climits>
 #include <functional>
 #include <vector>
-// #include <optional>
 #include <unordered_set>
-
+#include <unordered_map>
+#include <utility>
+#include <optional>
 
 class Node; // forward declare
 
@@ -18,27 +19,24 @@ class Port
     //       an output type.
   std::string name;
   PortType type;
-  std::reference_wrapper<Node> owner;
   std::vector<std::reference_wrapper<Port>> connections;
   
   public:
-    Port(Node& o, std::string_view n, PortType t) : name(n), type(t), owner(o) {
+    Port(std::string_view n, PortType t) : name(n), type(t) {
     }
     
-  
+
     std::string_view getName() const { return name; }
   
-  
-    const Node& readOwner() const { return owner.get(); }
-  
-  
+
     const PortType portType() const { return type; }
   
-  
+
     const std::vector<std::reference_wrapper<Port>>& readConnections() const {
       return connections;
     }
   
+
     bool isConnected() const {
       return connections.size() > 0;
     }
@@ -50,20 +48,6 @@ class Port
         connections.push_back(std::ref(p));
       }
     }
-
-
-    // CRUCIAL for hashing (detects collisions)
-    bool operator==(const Port& o) const {
-        return name == o.name && type == o.type;
-    }
-};
-
-// Hash port name & type
-template <> struct std::hash<Port> {
-    size_t operator()(const Port& key) const {
-        static const std::hash<std::string_view> h;
-        return h(key.getName()) + static_cast<std::size_t>(key.portType());
-    }
 };
 
 
@@ -73,12 +57,11 @@ class Node
     //       can be connected to build a node graph.
     std::string name;
     std::string type;
-    std::vector<Port> inputPorts;
-    std::vector<Port> outputPorts;
-  
+    std::unordered_map<std::string, Port> inputPorts;
+    std::unordered_map<std::string, Port> outputPorts;
   
   public:
-    Node(std::string_view n, std::string_view t) : name(n), type(t) { }
+    Node(std::string_view n, std::string t) : name(n), type(t) { }
   
     
     std::string_view readName() const { return name; }
@@ -86,37 +69,35 @@ class Node
   
     std::string_view readType() const { return type; }
   
-  
-    const std::vector<Port>& readPorts(PortType pt) const {
-      if (pt == input) return inputPorts;
-      else return outputPorts;
+
+    const std::unordered_map<std::string, Port>& getPorts(PortType pt) const {
+      return pt == input? inputPorts : outputPorts;
     }
   
-    
-    bool anyConnections() const {
-      bool connected = false;
-      
-      for (const auto& p : inputPorts) {
-        connected = p.isConnected();
-        if (connected) break;
+    std::unordered_map<std::string, Port>& getPorts(PortType pt) {
+      return const_cast< std::unordered_map<std::string, Port>& >(const_cast<const Node*>(this)->getPorts(pt));
+    }
+
+    bool anyConnections() const {    
+      for (const auto& [k, p] : inputPorts) {
+          if (p.isConnected()) {
+            return true;
+          }
       }
       
-      if (!connected) {
-        for (const auto& p : outputPorts) {
-          connected = p.isConnected();
-          if (connected) break;
-        }
+      for (const auto& [k, p] : outputPorts) {
+          if (p.isConnected()) {
+            return true;
+          }
       }
-      
-      return connected;
+
+      return false;
     }
   
   
     void newPort(std::string_view portName, PortType pt) {
-      Port p(*this, portName, pt);
-      
-      if (pt == input) inputPorts.push_back(p);
-      else outputPorts.push_back(p);
+      Port p(portName, pt);
+      getPorts(pt).emplace(p.getName(), p);
     }
     
   
@@ -133,30 +114,26 @@ class Node
 
     // CRUCIAL for hashing (detects collisions)
     bool operator==(const Node& o) const {
-        return name == o.name && type == o.type;
+        return name == o.name;
     }
   
 
-  private:
-      Port* findPort(std::string_view name, PortType pt) {
-      std::vector<Port>& ports = pt == input? inputPorts: outputPorts;
-      
-      for (auto& p : ports) {
-        if (p.getName() == name) {
-          return &p;
-        }
+    Port* findPort(std::string_view name, PortType pt) {
+      std::unordered_map<std::string, Port>& ports{getPorts(pt)};
+      auto it = ports.find(std::string(name));
+      if (it != ports.end()) {
+        return &(it->second);
       }
-      
       return nullptr;
     }
 };
 
 
-// Hash node name & type
+// Hash node name (type is hashed by Compound's map)
 template <> struct std::hash<Node> {
     size_t operator()(const Node& key) const {
         static const std::hash<std::string_view> h;
-        return h(key.readName()) + h(key.readType());
+        return h(key.readName());
     }
 };
 
@@ -164,65 +141,70 @@ template <> struct std::hash<Node> {
 class Compound
 {
     // TODO: Implement class. The compound should have the node graph.
-  std::unordered_set<Node> nodes;
+  std::unordered_map<std::string, std::unordered_set<Node>> nodes;
   
   public:
-    std::unordered_set<Node> getNodes() {
+    const std::unordered_map<std::string, std::unordered_set<Node>>& getAllNodes() const {
       return nodes;
     }
     
-  
-    void insertNode(Node newNode) {
-      nodes.insert(newNode);
+
+    void insertNode(const Node& newNode) {
+      std::string_view nodeType = newNode.readType();
+      nodes[std::string(nodeType)].insert(newNode);
     }
 };
 
-bool containsNodeType(Compound compound, std::string nodeType)
+bool containsNodeType(Compound compound, std::string_view nodeType)
 {
     // TODO: Return true if the compound contains a node of a given type, false
     //       otherwise. How would you optimize your search strategy if the graph
     //       contained a large number of connected nodes?
-  
-    // FIXME: have a hash-map for different nodeTypes
-    for (const auto& n : compound.getNodes()) {
-      if (n.readType() == nodeType) {
-        return true;
-      }
-    }
-  
-    return false;
+    const auto& allNodes = compound.getAllNodes();
+    return allNodes.find(std::string(nodeType)) != allNodes.end();
 }
 
 int getNodeCount(Compound compound)
 {
     // TODO: Return the total number of nodes in the compound.
-  return compound.getNodes().size();
+    const auto& allNodes = compound.getAllNodes(); 
+    int res = 0;
+    for (const auto&[nodeType, nodeSet] : allNodes) { // Structured-binding FTW!
+      res += nodeSet.size();
+    }
+    return res;
 }
 
 int getMaxNumberOfConnectedInputPorts(Compound compound)
 {
     // TODO: Return the maximum number of ports found on any node in the compound.
-  int maxInputs = 0;
-  for (const auto& n: compound.getNodes()) {
-    int numInputs = n.readPorts(input).size();
-    if (numInputs > maxInputs) {
-      maxInputs = numInputs;
+    const auto& allNodes = compound.getAllNodes();
+    int maxInputs = 0;
+    for (const auto&[nodeType, nodeSet] : allNodes) {
+      for (const auto& n : nodeSet) {
+        int numInputs = n.getPorts(input).size();
+        if (numInputs > maxInputs) {
+          maxInputs = numInputs;
+        }
+      }
     }
-  }
-  return maxInputs;
+    return maxInputs;
 }
 
 int getMinNumberOfOutputPorts(Compound compound)
 {
     // TODO: Return the minimum number of ports found on any node in the compound.
-  int minOutputs = INT_MAX;
-  for (const auto& n: compound.getNodes()) {
-    int numOutputs = n.readPorts(output).size();
-    if (numOutputs < minOutputs) {
-      minOutputs = numOutputs;
+    const auto& allNodes = compound.getAllNodes();
+    int minOutputs = INT_MAX;
+    for (const auto&[nodeType, nodeSet] : allNodes) {
+      for (const auto& n : nodeSet) {
+        int numOutputs = n.getPorts(output).size();
+        if (numOutputs < minOutputs) {
+          minOutputs = numOutputs;
+        }
+      }
     }
-  }
-  return minOutputs;
+    return minOutputs;
 }
 
 
@@ -231,13 +213,14 @@ int getNumberOfNodesWithNoConnections(Compound compound)
     // TODO: Return the number of nodes that are not connected to any other node
     //       in the compound.
   int numDangling = 0;
-  
-  for (const auto& n: compound.getNodes()) {
-    if (!n.anyConnections()) {
-      numDangling++;
+  const auto& allNodes = compound.getAllNodes();
+  for (const auto&[nodeType, nodeSet] : allNodes) {
+    for (const auto& n : nodeSet) {
+      if (!n.anyConnections()) {
+        numDangling++;
+      }
     }
   }
-  
   return numDangling;
 }
 
