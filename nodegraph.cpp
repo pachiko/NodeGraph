@@ -6,7 +6,8 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <utility>
-#include <optional>
+#include <memory>
+
 
 class Node; // forward declare
 
@@ -56,8 +57,8 @@ class Node
     //       can be connected to build a node graph.
     std::string_view name;
     std::string_view type;
-    std::unordered_map<std::string_view, Port> inputPorts;
-    std::unordered_map<std::string_view, Port> outputPorts;
+    std::unordered_map<std::string_view, std::shared_ptr<Port>> inputPorts;
+    std::unordered_map<std::string_view, std::shared_ptr<Port>> outputPorts;
   
   public:
     Node(std::string_view n, std::string_view t) : name(n), type(t) { }
@@ -69,23 +70,24 @@ class Node
     std::string_view readType() const { return type; }
   
 
-    const std::unordered_map<std::string_view, Port>& getPorts(PortType pt) const {
+    const std::unordered_map<std::string_view, std::shared_ptr<Port>>& getPorts(PortType pt) const {
       return pt == input? inputPorts : outputPorts;
     }
   
-    std::unordered_map<std::string_view, Port>& getPorts(PortType pt) {
-      return const_cast< std::unordered_map<std::string_view, Port>& >(const_cast<const Node*>(this)->getPorts(pt));
+    std::unordered_map<std::string_view, std::shared_ptr<Port>>& getPorts(PortType pt) {
+      return const_cast< std::unordered_map<std::string_view, std::shared_ptr<Port>>& >
+        (const_cast<const Node*>(this)->getPorts(pt));
     }
 
     bool anyConnections() const {    
       for (const auto& [k, p] : inputPorts) {
-          if (p.isConnected()) {
+          if (p->isConnected()) {
             return true;
           }
       }
       
       for (const auto& [k, p] : outputPorts) {
-          if (p.isConnected()) {
+          if (p->isConnected()) {
             return true;
           }
       }
@@ -95,16 +97,15 @@ class Node
   
   
     void newPort(std::string_view portName, PortType pt) {
-      Port p(portName, pt);
-      getPorts(pt).emplace(p.getName(), p);
+      getPorts(pt).insert(std::make_pair(portName, std::make_shared<Port>(portName, pt)));
     }
     
   
-    void connect(Node& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
+    void connect(std::shared_ptr<Node>& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
       Port* p = findPort(myPortName, myPortType);
       if (p == nullptr) return;
       
-      Port* op = other.findPort(otherPortName, myPortType == input? output : input);
+      Port* op = other->findPort(otherPortName, myPortType == input? output : input);
       if (op == nullptr) return;
       
       p->connect(*op);
@@ -118,10 +119,10 @@ class Node
   
 
     Port* findPort(std::string_view name, PortType pt) {
-      std::unordered_map<std::string_view, Port>& ports{getPorts(pt)};
+      std::unordered_map<std::string_view, std::shared_ptr<Port>>& ports{getPorts(pt)};
       auto it = ports.find(name);
       if (it != ports.end()) {
-        return &(it->second);
+        return it->second.get();
       }
       return nullptr;
     }
@@ -140,21 +141,21 @@ template <> struct std::hash<Node> {
 class Compound
 {
     // TODO: Implement class. The compound should have the node graph.
-  std::unordered_map<std::string_view, std::unordered_set<Node>> nodes;
+  std::unordered_map<std::string_view, std::unordered_set<std::shared_ptr<Node>>> nodes;
   
   public:
-    const std::unordered_map<std::string_view, std::unordered_set<Node>>& getAllNodes() const {
+    const std::unordered_map<std::string_view, std::unordered_set<std::shared_ptr<Node>>>& getAllNodes() const {
       return nodes;
     }
     
 
-    void insertNode(const Node& newNode) {
-      std::string_view nodeType = newNode.readType();
+    void insertNode(const std::shared_ptr<Node>& newNode) {
+      std::string_view nodeType = newNode->readType();
       nodes[nodeType].insert(newNode);
     }
 };
 
-bool containsNodeType(Compound compound, std::string_view nodeType)
+bool containsNodeType(const Compound& compound, std::string_view nodeType)
 {
     // TODO: Return true if the compound contains a node of a given type, false
     //       otherwise. How would you optimize your search strategy if the graph
@@ -163,7 +164,7 @@ bool containsNodeType(Compound compound, std::string_view nodeType)
     return allNodes.find(nodeType) != allNodes.end();
 }
 
-int getNodeCount(Compound compound)
+int getNodeCount(const Compound& compound)
 {
     // TODO: Return the total number of nodes in the compound.
     const auto& allNodes = compound.getAllNodes(); 
@@ -174,14 +175,14 @@ int getNodeCount(Compound compound)
     return res;
 }
 
-int getMaxNumberOfConnectedInputPorts(Compound compound)
+int getMaxNumberOfConnectedInputPorts(const Compound& compound)
 {
     // TODO: Return the maximum number of ports found on any node in the compound.
     const auto& allNodes = compound.getAllNodes();
     int maxInputs = 0;
     for (const auto&[nodeType, nodeSet] : allNodes) {
       for (const auto& n : nodeSet) {
-        int numInputs = n.getPorts(input).size();
+        int numInputs = n->getPorts(input).size();
         if (numInputs > maxInputs) {
           maxInputs = numInputs;
         }
@@ -190,14 +191,14 @@ int getMaxNumberOfConnectedInputPorts(Compound compound)
     return maxInputs;
 }
 
-int getMinNumberOfOutputPorts(Compound compound)
+int getMinNumberOfOutputPorts(const Compound& compound)
 {
     // TODO: Return the minimum number of ports found on any node in the compound.
     const auto& allNodes = compound.getAllNodes();
     int minOutputs = INT_MAX;
     for (const auto&[nodeType, nodeSet] : allNodes) {
       for (const auto& n : nodeSet) {
-        int numOutputs = n.getPorts(output).size();
+        int numOutputs = n->getPorts(output).size();
         if (numOutputs < minOutputs) {
           minOutputs = numOutputs;
         }
@@ -207,7 +208,7 @@ int getMinNumberOfOutputPorts(Compound compound)
 }
 
 
-int getNumberOfNodesWithNoConnections(Compound compound)
+int getNumberOfNodesWithNoConnections(const Compound& compound)
 {
     // TODO: Return the number of nodes that are not connected to any other node
     //       in the compound.
@@ -215,7 +216,7 @@ int getNumberOfNodesWithNoConnections(Compound compound)
   const auto& allNodes = compound.getAllNodes();
   for (const auto&[nodeType, nodeSet] : allNodes) {
     for (const auto& n : nodeSet) {
-      if (!n.anyConnections()) {
+      if (!n->anyConnections()) {
         numDangling++;
       }
     }
@@ -231,28 +232,32 @@ int main()
 
     // TODO: Populate the compound with the necessary nodes and ports to pass the
     //       tests below.
+
+
     // NB: String literals have program lifetime
-    Node my_surface_material("my_surface_material", "standard_surface");
-    my_surface_material.newPort("transmission_color", input);
-    my_surface_material.newPort("transmission_scatter", input);
-    my_surface_material.newPort("base_color", input);
-    my_surface_material.newPort("dangling_output", output);
+    // Don't do this: std::make_shared<Node>(new Node(...)); unless you implemented CTOR: Node(Node *)
+    std::shared_ptr<Node> my_surface_material{std::make_shared<Node>("my_surface_material", "standard_surface")};
+    my_surface_material->newPort("transmission_color", input);
+    my_surface_material->newPort("transmission_scatter", input);
+    my_surface_material->newPort("base_color", input);
+    my_surface_material->newPort("dangling_output", output);
   
-    Node my_uv_projection("my_uv_projection", "uv_projection");
-    my_uv_projection.newPort("color", output);
-    my_uv_projection.newPort("projection_color", input);
-    my_uv_projection.connect(my_surface_material, "color", "transmission_color", output);
-    my_uv_projection.connect(my_surface_material, "color", "transmission_scatter", output);
+
+    std::shared_ptr<Node> my_uv_projection{std::make_shared<Node>("my_uv_projection", "uv_projection")};
+    my_uv_projection->newPort("color", output);
+    my_uv_projection->newPort("projection_color", input);
+    my_uv_projection->connect(my_surface_material, "color", "transmission_color", output);
+    my_uv_projection->connect(my_surface_material, "color", "transmission_scatter", output);
     
   
-    Node transmission_texture("transmission_texture", "image");
-    transmission_texture.newPort("color", output);
-    transmission_texture.connect(my_uv_projection, "color", "projection_color", output);
+    std::shared_ptr<Node> transmission_texture{std::make_shared<Node>("transmission_texture", "image")};
+    transmission_texture->newPort("color", output);
+    transmission_texture->connect(my_uv_projection, "color", "projection_color", output);
   
   
-    Node base_texture("base_texture", "image");
-    base_texture.newPort("color", output);
-    base_texture.connect(my_surface_material, "color", "base_color", output);
+    std::shared_ptr<Node> base_texture{std::make_shared<Node>("base_texture", "image")};
+    base_texture->newPort("color", output);
+    base_texture->connect(my_surface_material, "color", "base_color", output);
   
   
     compound.insertNode(my_surface_material);
