@@ -1,0 +1,23 @@
+You are on the look development team and you are asked to design and implement objects that describe nodes which can be connected through input and output ports, i.e. node graphs. The team also wants you to create a compound object which is used to hide the complexity of a reusable node graph. For the sake of this exercise, you can think of the compound as just a container for a node graph.
+
+For simplicity, we can assume that a node is of a certain type, and it contains input and output ports that can be used to connect to other nodes in a node graph. The compound has a single node graph, where the nodes in the graph can be connected arbitrarily through the ports, or not connected to any nodes in the graph.
+
+Objectives:
+
+Implement the placeholder classes for Port, Node, and Compound.
+
+Implement the compound utility functions containsNodeType, getNodeCount, getMaxNumberOfConnectedInputPorts, getMinNumberOfOutputPorts, and getNumberOfNodesWithNoConnections. Try to think of the separation of concerns between the utility functions and the objects they use.
+
+In the test case, populate the compound with a node graph that satisfies the test conditions so all the tests pass. You can make up your own or use the example node graph below.
+
+Make any improvements to the existing code that you see fit.
+
+Example node graph:
+
+Create a node of type standard_surface and call it my_surface_material.
+
+Create a node of type uv_projection and connect its color output to the transmission_color and transmission_scatter inputs on my_surface_material.
+
+Create a node of type image called transmission_texture and connect its color output to the projection_color input on the uv_projection node.
+
+Create a node of type image called base_texture and connect its color output to the base_color input on my_surface_material.
