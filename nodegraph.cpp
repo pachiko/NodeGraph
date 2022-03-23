@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <string_view>
 #include <climits>
 #include <functional>
@@ -17,7 +16,7 @@ class Port
 {
     // TODO: Implement class. The port should be able to know if it's an input or
     //       an output type.
-  std::string name;
+  std::string_view name;
   PortType type;
   std::vector<std::reference_wrapper<Port>> connections;
   
@@ -55,13 +54,13 @@ class Node
 {
     // TODO: Implement class. A node should have a type and input/output ports that
     //       can be connected to build a node graph.
-    std::string name;
-    std::string type;
-    std::unordered_map<std::string, Port> inputPorts;
-    std::unordered_map<std::string, Port> outputPorts;
+    std::string_view name;
+    std::string_view type;
+    std::unordered_map<std::string_view, Port> inputPorts;
+    std::unordered_map<std::string_view, Port> outputPorts;
   
   public:
-    Node(std::string_view n, std::string t) : name(n), type(t) { }
+    Node(std::string_view n, std::string_view t) : name(n), type(t) { }
   
     
     std::string_view readName() const { return name; }
@@ -70,12 +69,12 @@ class Node
     std::string_view readType() const { return type; }
   
 
-    const std::unordered_map<std::string, Port>& getPorts(PortType pt) const {
+    const std::unordered_map<std::string_view, Port>& getPorts(PortType pt) const {
       return pt == input? inputPorts : outputPorts;
     }
   
-    std::unordered_map<std::string, Port>& getPorts(PortType pt) {
-      return const_cast< std::unordered_map<std::string, Port>& >(const_cast<const Node*>(this)->getPorts(pt));
+    std::unordered_map<std::string_view, Port>& getPorts(PortType pt) {
+      return const_cast< std::unordered_map<std::string_view, Port>& >(const_cast<const Node*>(this)->getPorts(pt));
     }
 
     bool anyConnections() const {    
@@ -119,8 +118,8 @@ class Node
   
 
     Port* findPort(std::string_view name, PortType pt) {
-      std::unordered_map<std::string, Port>& ports{getPorts(pt)};
-      auto it = ports.find(std::string(name));
+      std::unordered_map<std::string_view, Port>& ports{getPorts(pt)};
+      auto it = ports.find(name);
       if (it != ports.end()) {
         return &(it->second);
       }
@@ -141,17 +140,17 @@ template <> struct std::hash<Node> {
 class Compound
 {
     // TODO: Implement class. The compound should have the node graph.
-  std::unordered_map<std::string, std::unordered_set<Node>> nodes;
+  std::unordered_map<std::string_view, std::unordered_set<Node>> nodes;
   
   public:
-    const std::unordered_map<std::string, std::unordered_set<Node>>& getAllNodes() const {
+    const std::unordered_map<std::string_view, std::unordered_set<Node>>& getAllNodes() const {
       return nodes;
     }
     
 
     void insertNode(const Node& newNode) {
       std::string_view nodeType = newNode.readType();
-      nodes[std::string(nodeType)].insert(newNode);
+      nodes[nodeType].insert(newNode);
     }
 };
 
@@ -161,7 +160,7 @@ bool containsNodeType(Compound compound, std::string_view nodeType)
     //       otherwise. How would you optimize your search strategy if the graph
     //       contained a large number of connected nodes?
     const auto& allNodes = compound.getAllNodes();
-    return allNodes.find(std::string(nodeType)) != allNodes.end();
+    return allNodes.find(nodeType) != allNodes.end();
 }
 
 int getNodeCount(Compound compound)
@@ -232,6 +231,7 @@ int main()
 
     // TODO: Populate the compound with the necessary nodes and ports to pass the
     //       tests below.
+    // NB: String literals have program lifetime
     Node my_surface_material("my_surface_material", "standard_surface");
     my_surface_material.newPort("transmission_color", input);
     my_surface_material.newPort("transmission_scatter", input);
