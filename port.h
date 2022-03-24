@@ -3,11 +3,12 @@
 
 #include <functional>
 #include <unordered_set>
-#include <vector>
-// #include "hashPort.h"
+#include "hashPort.h"
 
 enum PortType {input, output};
 class Node;
+
+using PortConnections = std::unordered_set<std::reference_wrapper<Port>, HashPort, EqualToPort>;
 
 class Port
 {
@@ -16,7 +17,8 @@ class Port
   const Node& owner;
   std::string_view name;
   PortType type;
-  std::vector<std::reference_wrapper<Port>> connections;
+  
+  PortConnections connections;
 
   public:
     Port(const Node& o, std::string_view n, PortType t);
@@ -27,7 +29,7 @@ class Port
   
     const PortType portType() const;
   
-    const std::vector<std::reference_wrapper<Port>>& readConnections() const;
+    const PortConnections& readConnections() const;
   
     bool isConnected() const;
     

@@ -39,18 +39,19 @@ int main()
   
     std::shared_ptr<Node> base_texture{std::make_shared<Node>("base_texture", "image")};
     base_texture->newPort("color", output);
-    base_texture->newPort("color", output); // Test Collisions
+    base_texture->newPort("color", output); // can't create duplicate port
     base_texture->connect(my_surface_material, "color", "base_color", output);
+    base_texture->connect(my_surface_material, "color", "base_color", output); // can't connect to same port again
+    // can connect to another port instance even if existing connection has same name & type
+    my_surface_material->connect(my_uv_projection, "base_color" , "color", input);
 
-  
     compound.insertNode(my_surface_material);
     compound.insertNode(my_uv_projection);
     compound.insertNode(transmission_texture);
     compound.insertNode(base_texture);
 
-    // Test collisions
     std::shared_ptr<Node> abc{std::make_shared<Node>("my_surface_material", "standard_surface")};
-    compound.insertNode(abc);
+    compound.insertNode(abc); // can't add new node with existing name & type
 
     // -- RUN TESTS --
     // Ensure the test node graph has a node of type standard_surface.

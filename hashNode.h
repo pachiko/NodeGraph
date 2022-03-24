@@ -1,6 +1,7 @@
 #ifndef HASH_NODE_H
 #define HASH_NODE_H
 
+// Nodes cannot have the same name and type within the same Compound
 #include "node.h"
 
 static const std::hash<std::string_view> h;

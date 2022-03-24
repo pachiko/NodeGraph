@@ -1,30 +1,23 @@
 #ifndef HASH_PORT_H
 #define HASH_PORT_H
 
-#include "hashNode.h"
-#include "port.h"
+// Ports can connect to multiple ports of the same name and type (but from different nodes)
+// Checks pointers for collision
+
+class Port;
+static const std::hash<Port *> ptrH;
 
 struct HashPort {
-    size_t operator()(const Port& p) const
-    {
-        return h(p.getName()) ^ static_cast<size_t>(p.portType());
-    }
-
     size_t operator()(const std::reference_wrapper<Port>& p) const
     {   
-        return this->operator()(p.get());
+        return ptrH(std::addressof(p.get()));
     }
 };
 
 struct EqualToPort {
-    bool operator()(const Port &lhs, const Port &rhs) const 
-    {
-        return lhs.getName() == rhs.getName() && lhs.portType() == rhs.portType();
-    }
-
     bool operator()(const std::reference_wrapper<Port> &lhs, const std::reference_wrapper<Port> &rhs) const 
     {
-        return this->operator()(lhs.get(), rhs.get());
+        return ptrH(std::addressof(lhs.get())) == ptrH(std::addressof(rhs.get()));
     }
 };
 

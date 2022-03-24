@@ -33,23 +33,28 @@ int getNodeCount(const Compound& compound)
 
 int getMaxNumberOfConnectedInputPorts(const Compound& compound)
 {
-    // TODO: Return the maximum number of ports found on any node in the compound.
+    // TODO: Return the maximum number of connected input ports found on any node in the compound.
     const auto& allNodes = compound.getAllNodes();
-    int maxInputs = 0;
+    int maxConnectedInputs = 0;
     for (const auto&[nodeType, nodeSet] : allNodes) {
       for (const auto& n : nodeSet) {
-        int numInputs = n->getPorts(input).size();
-        if (numInputs > maxInputs) {
-          maxInputs = numInputs;
+        int numConnnectedInputs = 0;
+        for (const auto& [portName, inputPort]: n->getPorts(input)) {
+          if (inputPort->isConnected()) {
+            numConnnectedInputs++;
+          }
+        }
+        if (numConnnectedInputs > maxConnectedInputs) {
+          maxConnectedInputs = numConnnectedInputs;
         }
       }
     }
-    return maxInputs;
+    return maxConnectedInputs;
 }
 
 int getMinNumberOfOutputPorts(const Compound& compound)
 {
-    // TODO: Return the minimum number of ports found on any node in the compound.
+    // TODO: Return the minimum number of output ports found on any node in the compound.
     const auto& allNodes = compound.getAllNodes();
     int minOutputs = INT_MAX;
     for (const auto&[nodeType, nodeSet] : allNodes) {

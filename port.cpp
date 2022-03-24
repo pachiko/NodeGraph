@@ -10,7 +10,7 @@ std::string_view Port::getName() const { return name; }
 
 const PortType Port::portType() const { return type; }
 
-const std::vector<std::reference_wrapper<Port>>& Port::readConnections() const {
+const PortConnections& Port::readConnections() const {
   return connections;
 }
 
@@ -20,7 +20,7 @@ bool Port::isConnected() const {
 
 void Port::connect(Port& p) {
   if (p.type != this->type) {
-    p.connections.push_back(std::ref(*this));
-    connections.push_back(std::ref(p));
+    p.connections.insert(std::ref(*this));
+    connections.insert(std::ref(p));
   }
 }
