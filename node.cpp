@@ -10,11 +10,11 @@ std::string_view Node::readName() const { return name; }
 
 std::string_view Node::readType() const { return type; }
 
-const std::unordered_map<std::string_view, std::unique_ptr<Port>>& Node::getPorts(PortType pt) const {
+const PortMap& Node::getPorts(PortType pt) const {
   return pt == input? inputPorts : outputPorts;
 }
 
-std::unordered_map<std::string_view, std::unique_ptr<Port>>& Node::getPorts(PortType pt) {
+PortMap& Node::getPorts(PortType pt) {
   return const_cast< std::unordered_map<std::string_view, std::unique_ptr<Port>>& >
     (const_cast<const Node*>(this)->getPorts(pt));
 }

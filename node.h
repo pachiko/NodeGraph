@@ -7,6 +7,8 @@
 
 #include "port.h"
 
+using PortMap = std::unordered_map<std::string_view, std::unique_ptr<Port>>;
+
 class Node
 {
     // TODO: Implement class. A node should have a type and input/output ports that
@@ -16,8 +18,8 @@ class Node
     unsigned int id;
     std::string_view name;
     std::string_view type;
-    std::unordered_map<std::string_view, std::unique_ptr<Port>> inputPorts;
-    std::unordered_map<std::string_view, std::unique_ptr<Port>> outputPorts;
+    PortMap inputPorts;
+    PortMap outputPorts;
 
   public:
     Node(std::string_view n, std::string_view t);
@@ -28,9 +30,9 @@ class Node
   
     std::string_view readType() const;
 
-    const std::unordered_map<std::string_view, std::unique_ptr<Port>>& getPorts(PortType pt) const;
+    const PortMap& getPorts(PortType pt) const;
 
-    std::unordered_map<std::string_view, std::unique_ptr<Port>>& getPorts(PortType pt);
+    PortMap& getPorts(PortType pt);
 
     bool anyConnections() const;
   
