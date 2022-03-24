@@ -15,7 +15,7 @@ const PortMap& Node::getPorts(PortType pt) const {
 }
 
 PortMap& Node::getPorts(PortType pt) {
-  return const_cast< std::unordered_map<std::string_view, std::unique_ptr<Port>>& >
+  return const_cast< PortMap& >
     (const_cast<const Node*>(this)->getPorts(pt));
 }
 
@@ -50,7 +50,7 @@ void Node::connect(std::shared_ptr<Node>& other, std::string_view myPortName, st
 }
 
 Port* Node::findPort(std::string_view name, PortType pt) {
-  std::unordered_map<std::string_view, std::unique_ptr<Port>>& ports{getPorts(pt)};
+  PortMap& ports{getPorts(pt)};
   auto it = ports.find(name);
   if (it != ports.end()) {
     return it->second.get();
