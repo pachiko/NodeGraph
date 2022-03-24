@@ -39,7 +39,7 @@ int main()
   
     std::shared_ptr<Node> base_texture{std::make_shared<Node>("base_texture", "image")};
     base_texture->newPort("color", output);
-    // base_texture->newPort("color", output); // Test Collisions
+    base_texture->newPort("color", output); // Test Collisions
     base_texture->connect(my_surface_material, "color", "base_color", output);
 
   
