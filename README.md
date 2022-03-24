@@ -82,14 +82,14 @@ template <> struct std::hash<std::reference_wrapper<Port>> {
     }
 };
 template <> struct std::equal_to<std::reference_wrapper<const Port>> {
-  bool operator()(const std::reference_wrapper<Port> &lhs, const std::reference_wrapper<Port> &rhs) const 
-  {
+   bool operator()(const std::reference_wrapper<Port> &lhs, const std::reference_wrapper<Port> &rhs) const 
+   {
       static const std::equal_to<Port> portEq; 
 
       const Port& l = lhs.get();
       const Port& r = rhs.get();
 
       return portEq(l, r);
-  }
+   }
 };
  ```
