@@ -9,9 +9,9 @@
                 "c++17",
                 "-fdiagnostics-color=always",
                 "-g",
-                "${fileDirname}/*.cpp",
+                "/mnt/a/NodeGraph/*.cpp",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "/mnt/a/NodeGraph/build/nodegraph"
             ],
             "options": {
                 "cwd": "${fileDirname}"
