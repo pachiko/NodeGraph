@@ -1,228 +1,11 @@
 #include <iostream>
 #include <string_view>
-#include <climits>
-#include <functional>
-#include <vector>
-#include <unordered_set>
-#include <unordered_map>
-#include <utility>
 #include <memory>
 
 
-class Node; // forward declare
-
-enum PortType {input, output};
-
-class Port
-{
-    // TODO: Implement class. The port should be able to know if it's an input or
-    //       an output type.
-  std::string_view name;
-  PortType type;
-  std::vector<std::reference_wrapper<Port>> connections;
-  
-  public:
-    Port(std::string_view n, PortType t) : name(n), type(t) {
-    }
-    
-
-    std::string_view getName() const { return name; }
-  
-
-    const PortType portType() const { return type; }
-  
-
-    const std::vector<std::reference_wrapper<Port>>& readConnections() const {
-      return connections;
-    }
-  
-
-    bool isConnected() const {
-      return connections.size() > 0;
-    }
-    
-  
-    void connect(Port& p) {
-      if (p.type != this->type) {
-        p.connections.push_back(std::ref(*this));
-        connections.push_back(std::ref(p));
-      }
-    }
-};
-
-
-class Node
-{
-    // TODO: Implement class. A node should have a type and input/output ports that
-    //       can be connected to build a node graph.
-    std::string_view name;
-    std::string_view type;
-    std::unordered_map<std::string_view, std::shared_ptr<Port>> inputPorts;
-    std::unordered_map<std::string_view, std::shared_ptr<Port>> outputPorts;
-  
-  public:
-    Node(std::string_view n, std::string_view t) : name(n), type(t) { }
-  
-    
-    std::string_view readName() const { return name; }
-  
-  
-    std::string_view readType() const { return type; }
-  
-
-    const std::unordered_map<std::string_view, std::shared_ptr<Port>>& getPorts(PortType pt) const {
-      return pt == input? inputPorts : outputPorts;
-    }
-  
-    std::unordered_map<std::string_view, std::shared_ptr<Port>>& getPorts(PortType pt) {
-      return const_cast< std::unordered_map<std::string_view, std::shared_ptr<Port>>& >
-        (const_cast<const Node*>(this)->getPorts(pt));
-    }
-
-    bool anyConnections() const {    
-      for (const auto& [k, p] : inputPorts) {
-          if (p->isConnected()) {
-            return true;
-          }
-      }
-      
-      for (const auto& [k, p] : outputPorts) {
-          if (p->isConnected()) {
-            return true;
-          }
-      }
-
-      return false;
-    }
-  
-  
-    void newPort(std::string_view portName, PortType pt) {
-      getPorts(pt).insert(std::make_pair(portName, std::make_shared<Port>(portName, pt)));
-    }
-    
-  
-    void connect(std::shared_ptr<Node>& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
-      Port* p = findPort(myPortName, myPortType);
-      if (p == nullptr) return;
-      
-      Port* op = other->findPort(otherPortName, myPortType == input? output : input);
-      if (op == nullptr) return;
-      
-      p->connect(*op);
-    }
-  
-
-    // CRUCIAL for hashing (detects collisions)
-    bool operator==(const Node& o) const {
-        return name == o.name;
-    }
-  
-
-    Port* findPort(std::string_view name, PortType pt) {
-      std::unordered_map<std::string_view, std::shared_ptr<Port>>& ports{getPorts(pt)};
-      auto it = ports.find(name);
-      if (it != ports.end()) {
-        return it->second.get();
-      }
-      return nullptr;
-    }
-};
-
-
-// Hash node name (type is hashed by Compound's map)
-template <> struct std::hash<Node> {
-    size_t operator()(const Node& key) const {
-        static const std::hash<std::string_view> h;
-        return h(key.readName());
-    }
-};
-
-
-class Compound
-{
-    // TODO: Implement class. The compound should have the node graph.
-  std::unordered_map<std::string_view, std::unordered_set<std::shared_ptr<Node>>> nodes;
-  
-  public:
-    const std::unordered_map<std::string_view, std::unordered_set<std::shared_ptr<Node>>>& getAllNodes() const {
-      return nodes;
-    }
-    
-
-    void insertNode(const std::shared_ptr<Node>& newNode) {
-      std::string_view nodeType = newNode->readType();
-      nodes[nodeType].insert(newNode);
-    }
-};
-
-bool containsNodeType(const Compound& compound, std::string_view nodeType)
-{
-    // TODO: Return true if the compound contains a node of a given type, false
-    //       otherwise. How would you optimize your search strategy if the graph
-    //       contained a large number of connected nodes?
-    const auto& allNodes = compound.getAllNodes();
-    return allNodes.find(nodeType) != allNodes.end();
-}
-
-int getNodeCount(const Compound& compound)
-{
-    // TODO: Return the total number of nodes in the compound.
-    const auto& allNodes = compound.getAllNodes(); 
-    int res = 0;
-    for (const auto&[nodeType, nodeSet] : allNodes) { // Structured-binding FTW!
-      res += nodeSet.size();
-    }
-    return res;
-}
-
-int getMaxNumberOfConnectedInputPorts(const Compound& compound)
-{
-    // TODO: Return the maximum number of ports found on any node in the compound.
-    const auto& allNodes = compound.getAllNodes();
-    int maxInputs = 0;
-    for (const auto&[nodeType, nodeSet] : allNodes) {
-      for (const auto& n : nodeSet) {
-        int numInputs = n->getPorts(input).size();
-        if (numInputs > maxInputs) {
-          maxInputs = numInputs;
-        }
-      }
-    }
-    return maxInputs;
-}
-
-int getMinNumberOfOutputPorts(const Compound& compound)
-{
-    // TODO: Return the minimum number of ports found on any node in the compound.
-    const auto& allNodes = compound.getAllNodes();
-    int minOutputs = INT_MAX;
-    for (const auto&[nodeType, nodeSet] : allNodes) {
-      for (const auto& n : nodeSet) {
-        int numOutputs = n->getPorts(output).size();
-        if (numOutputs < minOutputs) {
-          minOutputs = numOutputs;
-        }
-      }
-    }
-    return minOutputs;
-}
-
-
-int getNumberOfNodesWithNoConnections(const Compound& compound)
-{
-    // TODO: Return the number of nodes that are not connected to any other node
-    //       in the compound.
-  int numDangling = 0;
-  const auto& allNodes = compound.getAllNodes();
-  for (const auto&[nodeType, nodeSet] : allNodes) {
-    for (const auto& n : nodeSet) {
-      if (!n->anyConnections()) {
-        numDangling++;
-      }
-    }
-  }
-  return numDangling;
-}
+#include "port.h"
+#include "node.h"
+#include "compound.h"
 
 int main()
 {
@@ -232,7 +15,6 @@ int main()
 
     // TODO: Populate the compound with the necessary nodes and ports to pass the
     //       tests below.
-
 
     // NB: String literals have program lifetime
     // Don't do this: std::make_shared<Node>(new Node(...)); unless you implemented CTOR: Node(Node *)
@@ -257,13 +39,18 @@ int main()
   
     std::shared_ptr<Node> base_texture{std::make_shared<Node>("base_texture", "image")};
     base_texture->newPort("color", output);
+    // base_texture->newPort("color", output); // Test Collisions
     base_texture->connect(my_surface_material, "color", "base_color", output);
-  
+
   
     compound.insertNode(my_surface_material);
     compound.insertNode(my_uv_projection);
     compound.insertNode(transmission_texture);
     compound.insertNode(base_texture);
+
+    // Test collisions
+    std::shared_ptr<Node> abc{std::make_shared<Node>("my_surface_material", "standard_surface")};
+    compound.insertNode(abc);
 
     // -- RUN TESTS --
     // Ensure the test node graph has a node of type standard_surface.
