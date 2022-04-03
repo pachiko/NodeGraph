@@ -17,11 +17,12 @@ class Port
   const Node& owner;
   std::string_view name;
   PortType type;
-  
   PortConnections connections;
 
   public:
     Port(const Node& o, std::string_view n, PortType t);
+
+    ~Port();
 
     const Node & getOwner() const;
 
@@ -30,6 +31,8 @@ class Port
     const PortType portType() const;
   
     const PortConnections& readConnections() const;
+
+    void disconnectAll();
   
     bool isConnected() const;
     
