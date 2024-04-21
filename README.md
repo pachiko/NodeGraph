@@ -11,8 +11,6 @@ AutoDesk
 - `make_shared` & `make_unique` does not need to receive the output of `new`, can just specify the args and it will call the CTOR
   - If the former is done, compiler expects a CTOR that receives a `ptr` as input eg. `Port(Port* p)`
 - In `tasks.json`, use wildcard `*.cpp` to compile all CPP files for the `-g` switch
-- In `tasks.json` and `launch.json` specify the direct path of the executable (`-o` for the former and `program` for the latter)
-  - so that it will still compile & run when you run from the `.vscode` folder
 - Put executables in a `build` folder so that `.gitignore` will ignore with `build/*`. Do not add `.exe` to the executables since it's not Windows but Ubuntu
 - When creating header and CPP files, the class definition in the header file should include fields and method prototypes.
   - The actual method implementation should be in the CPP file.

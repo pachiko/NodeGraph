@@ -8,7 +8,7 @@
             "name": "g++ - Build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/mnt/a/NodeGraph/build/nodegraph",
+            "program": "${fileDirname}/build/nodegraph",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
