@@ -7,6 +7,7 @@
 #include "node.h"
 #include "hashNode.h"
 
+// Can have nodes with the same name
 using NodeMap = std::unordered_map<std::string_view, std::unordered_set<std::shared_ptr<Node>, HashNode, EqualToNode>>;
 
 class Compound

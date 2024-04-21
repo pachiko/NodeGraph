@@ -30,11 +30,11 @@ class Port
   
     const PortType portType() const;
   
-    const PortConnections& readConnections() const;
-
-    void disconnectAll();
+    const PortConnections& getConnections() const;
   
     bool isConnected() const;
+
+    void disconnect(Port& p);
     
     void connect(Port& p);
 };

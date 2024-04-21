@@ -68,12 +68,17 @@ int main()
     
     // Every node in the node graph is connected to at least one node in the graph.
     bool test5 = getNumberOfNodesWithNoConnections(compound) == 0;
+
+    // Test the disconnect() function
+    transmission_texture->disconnect(my_uv_projection, "color", "projection_color", output);
+    bool test6 = getNumberOfNodesWithNoConnections(compound) == 1;
     
     std::cout << "test1: " << test1 << '\n';
     std::cout << "test2: " << test2 << '\n';
     std::cout << "test3: " << test3 << '\n';
     std::cout << "test4: " << test4 << '\n';
     std::cout << "test5: " << test5 << '\n';
+    std::cout << "test6: " << test6 << '\n';
 
     return 0;
 }

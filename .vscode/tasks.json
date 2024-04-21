@@ -5,13 +5,12 @@
             "label": "C/C++: g++ build active file",
             "command": "/usr/bin/g++",
             "args": [
-                "--std",
-                "c++17",
+                "--std=c++17",
                 "-fdiagnostics-color=always",
                 "-g",
-                "${fileDirname}/*.cpp",
+                "${workspaceFolder}/*.cpp",
                 "-o",
-                "${fileDirname}/build/nodegraph"
+                "${workspaceFolder}/build/nodegraph"
             ],
             "options": {
                 "cwd": "${fileDirname}"

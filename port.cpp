@@ -5,7 +5,11 @@ Port::Port(const Node& o, std::string_view n, PortType t) : owner(o), name(n), t
 }
 
 Port::~Port() {
-  disconnectAll();
+  for (auto& op: connections) {
+    Port& opr = op.get();
+    PortConnections& oc = opr.connections;
+    oc.erase(std::ref(*this));
+  }
 }
 
 const Node& Port::getOwner() const { return owner; }
@@ -14,16 +18,15 @@ std::string_view Port::getName() const { return name; }
 
 const PortType Port::portType() const { return type; }
 
-const PortConnections& Port::readConnections() const {
+const PortConnections& Port::getConnections() const {
   return connections;
 }
 
-void Port::disconnectAll() {
-  for (auto& op: connections) {
-    Port& opr = op.get();
-    PortConnections& oc = opr.connections;
-    oc.erase(std::ref(*this));
-  }
+void Port::disconnect(Port& p) {
+  PortConnections& oc = p.connections;
+  oc.erase(std::ref(*this));
+
+  connections.erase(p);
 }
 
 bool Port::isConnected() const {

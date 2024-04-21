@@ -17,7 +17,7 @@ struct HashPort {
 struct EqualToPort {
     bool operator()(const std::reference_wrapper<Port> &lhs, const std::reference_wrapper<Port> &rhs) const 
     {
-        return ptrH(std::addressof(lhs.get())) == ptrH(std::addressof(rhs.get()));
+        return std::addressof(lhs.get()) == std::addressof(rhs.get());
     }
 };
 

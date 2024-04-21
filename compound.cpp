@@ -7,7 +7,7 @@ const NodeMap& Compound::getAllNodes() const {
 }
 
 void Compound::insertNode(const std::shared_ptr<Node>& newNode) {
-  std::string_view nodeType = newNode->readType();
+  std::string_view nodeType = newNode->getType();
   nodes[nodeType].insert(newNode);
 }
 
@@ -38,15 +38,8 @@ int getMaxNumberOfConnectedInputPorts(const Compound& compound)
     int maxConnectedInputs = 0;
     for (const auto&[nodeType, nodeSet] : allNodes) {
       for (const auto& n : nodeSet) {
-        int numConnnectedInputs = 0;
-        for (const auto& [portName, inputPort]: n->getPorts(input)) {
-          if (inputPort->isConnected()) {
-            numConnnectedInputs++;
-          }
-        }
-        if (numConnnectedInputs > maxConnectedInputs) {
-          maxConnectedInputs = numConnnectedInputs;
-        }
+        if (n->inputPorts[1].size() > maxConnectedInputs)
+          maxConnectedInputs = n->inputPorts[1].size();
       }
     }
     return maxConnectedInputs;
