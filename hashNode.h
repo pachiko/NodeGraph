@@ -12,7 +12,7 @@ struct HashNode {
         return h(n.getName()) ^ (h(n.getType()) << 1);
     }
 
-    size_t operator()(const std::shared_ptr<Node>& n) const
+    size_t operator()(const std::unique_ptr<Node>& n) const
     {   
         return this->operator()(*n);
     }
@@ -24,7 +24,7 @@ struct EqualToNode {
         return lhs.getName() == rhs.getName() && lhs.getType() == rhs.getType();
     }
 
-    bool operator()(const std::shared_ptr<Node> &lhs, const std::shared_ptr<Node> &rhs) const 
+    bool operator()(const std::unique_ptr<Node> &lhs, const std::unique_ptr<Node> &rhs) const 
     {
         return this->operator()(*lhs, *rhs);
     }

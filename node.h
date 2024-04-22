@@ -45,9 +45,9 @@ class Node
   
     void newPort(std::string_view portName, PortType pt);
     
-    void connect(std::shared_ptr<Node>& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType);
+    void connect(Node* other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType);
 
-    void disconnect(std::shared_ptr<Node>& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType);
+    void disconnect(Node* other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType);
   
     Port* findPort(std::string_view name, PortType pt);
 };

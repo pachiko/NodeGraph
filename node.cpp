@@ -26,7 +26,7 @@ void Node::newPort(std::string_view portName, PortType pt) {
   pc.insert(std::make_pair(portName, pm[portName].get()));
 }
 
-void Node::connect(std::shared_ptr<Node>& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
+void Node::connect(Node* other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
   Port* p = findPort(myPortName, myPortType);
   if (p == nullptr) return;
   
@@ -38,7 +38,7 @@ void Node::connect(std::shared_ptr<Node>& other, std::string_view myPortName, st
   other->portConnectionChanged(op);
 }
 
-void Node::disconnect(std::shared_ptr<Node>& other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
+void Node::disconnect(Node* other, std::string_view myPortName, std::string_view otherPortName, PortType myPortType) {
   Port* p = findPort(myPortName, myPortType);
   if (p == nullptr) return;
   

@@ -6,9 +6,10 @@ const NodeMap& Compound::getAllNodes() const {
   return nodes;
 }
 
-void Compound::insertNode(const std::shared_ptr<Node>& newNode) {
-  std::string_view nodeType = newNode->getType();
-  nodes[nodeType].insert(newNode);
+Node* Compound::createNode(std::string_view name, std::string_view type) {
+  auto p = nodes[type].insert(std::make_unique<Node>(name, type)); // still going to be a move regardless
+  if (p.second) return p.first->get();
+  return nullptr;
 }
 
 bool containsNodeType(const Compound& compound, std::string_view nodeType)

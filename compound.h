@@ -7,8 +7,8 @@
 #include "node.h"
 #include "hashNode.h"
 
-// Can have nodes with the same name
-using NodeMap = std::unordered_map<std::string_view, std::unordered_set<std::shared_ptr<Node>, HashNode, EqualToNode>>;
+// Type->Node Set. Can have nodes with the same name but diff type
+using NodeMap = std::unordered_map<std::string_view, std::unordered_set<std::unique_ptr<Node>, HashNode, EqualToNode>>;
 
 class Compound
 {
@@ -18,7 +18,7 @@ class Compound
   public:
     const NodeMap& getAllNodes() const;
 
-    void insertNode(const std::shared_ptr<Node>& newNode);
+    Node* createNode(std::string_view name, std::string_view type);
 };
 
 // Utility functions
